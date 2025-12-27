@@ -1,0 +1,12 @@
+{
+  "sources": [
+        {
+            "repository": "Warzone/PublicMaps",
+            "branch": "main"
+        },
+        {
+            "repository": "Warzone/PrivateMaps",
+            "branch": "master"
+        }
+    ]
+}
