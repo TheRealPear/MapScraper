@@ -93,7 +93,10 @@ def handle_github_repo(repo, branch_override=None):
         logging.error(f"Skipping {repo}: {e}")
         return
 
-    # Look for map.png files
+    # collect all map.png files and the directories that directly contain them.
+    map_items = [] # list of tuples: (item, Path(file_path), Path(map_dir))
+    map_dirs = set() # set of Path objects that directly contain a map.png
+
     for item in tree:
         if item.get("type") != "blob":
             continue
@@ -103,20 +106,41 @@ def handle_github_repo(repo, branch_override=None):
             continue
 
         p = Path(path)
-        folder = p.parent
-        folders = list(folder.parts)
+        map_dir = p.parent
+        map_items.append((item, p, map_dir))
+        map_dirs.add(map_dir)
 
-        # Base map folder
-        if len(folders) >= 2:
-            base = folders[1]
-        else:
-            base = folders[-1]
+    # resolve map_name and variant using nearest ancestor in map_dirs (excluding self)
+    for item, p, map_dir in map_items:
+        anc = None
+        distance = 0
+        cur = map_dir
+        steps = 0
+        parent = cur.parent
+        while True:
+            if parent == cur:
+                break
+            steps += 1
+            if parent in map_dirs:
+                anc = parent
+                distance = steps
+                break
+            cur = parent
+            parent = cur.parent
 
-        # Variant exists only if depth is 3
-        if len(folders) == 3:
-            keep_parts = [base, folders[2]]
+        if anc is None:
+            # No ancestor directory that directly contains a map.png -> this directory is the base map
+            map_name = map_dir.name
+            variant = None
         else:
-            keep_parts = [base]
+            if distance == 1:
+                # Valid variant: anc is map_name directory, map_dir is variant
+                map_name = anc.name
+                variant = map_dir.name
+            else:
+                continue
+
+        keep_parts = [map_name] + ([variant] if variant else [])
 
         dest_dir = OUT_DIR.joinpath(*keep_parts)
         dest_file = dest_dir / "map.png"
@@ -126,16 +150,16 @@ def handle_github_repo(repo, branch_override=None):
         local_sha = sha_file.read_text(encoding="utf-8").strip() if sha_file.exists() else None
 
         if local_sha == remote_sha and dest_file.exists():
-            logging.debug(f"{path} -> {dest_file} is up to date, skipping.")
+            logging.debug(f"{p} -> {dest_file} is up to date, skipping.")
             continue
 
-        print(f"Downloading: {repo} -> {path} -> {dest_file}")
+        print(f"Downloading: {repo} -> {p} -> {dest_file}")
         try:
-            download_raw(repo, branch, path, dest_file, sha=remote_sha)
+            download_raw(repo, branch, str(p), dest_file, sha=remote_sha)
             sha_file.parent.mkdir(parents=True, exist_ok=True)
             sha_file.write_text(remote_sha or "", encoding="utf-8")
         except requests.HTTPError as e:
-            logging.error(f"Failed to download {repo}:{path}: {e}")
+            logging.error(f"Failed to download {repo}:{p}: {e}")
 
 def handle_source(source):
     repo = source.get("repository", "")
