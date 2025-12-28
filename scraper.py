@@ -10,9 +10,9 @@ from pathlib import Path
 
 GITHUB_API = "https://api.github.com"
 RAW_BASE = "https://raw.githubusercontent.com"
-TOKEN = os.environ.get("GITHUB_TOKEN")
+TOKEN = os.environ.get("PA_TOKEN")
 if not TOKEN:
-    logging.warning("No GITHUB_TOKEN provided. You may be rate limited more often and will not be able to access private repositories.")
+    logging.warning("No PA_TOKEN provided. You may be rate limited more often and will not be able to access private repositories.")
 HEADERS = {"Authorization": f"token {TOKEN}"} if TOKEN else {}
 
 SOURCES_FILE = "sources.json"

@@ -4,7 +4,7 @@ A Python script to automatically fetch map images and update them as needed. Thi
 
 ## Setup
 
-For the best experience, it is recommended that you set a `GITHUB_TOKEN` environment variable to avoid being rate limited and to access private repositories as needed.
+For the best experience, it is recommended that you set a `PA_TOKEN` (using classic Personal Access tokens) environment variable to avoid being rate limited and to access private repositories as needed.
 
 You can also add more sources in the [`sources.json`](sources.json) file. Currently, only GitHub repositories are supported.
 
